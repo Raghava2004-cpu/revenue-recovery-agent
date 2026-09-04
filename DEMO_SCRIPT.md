@@ -41,7 +41,7 @@ unless you're asked to.
 
 > "So: **Detect** — Razorpay webhooks and batch cases normalise into one shape.
 >
-> **Diagnose** — and this is the first decision that matters. **88% of failures
+> **Diagnose** — and this is the first decision that matters. **86% of failures
 > are classified by a deterministic rule engine**, not a model. It's free,
 > instant, and auditable. The LLM is only asked about the free-text tail the
 > rules can't match — and below 70% confidence it returns UNKNOWN and the case
@@ -167,7 +167,7 @@ unless you're asked to.
 > caught it because the baseline arm existed. Scoping the rule correctly turned
 > a ₹1 lakh loss into a ₹4.3 lakh win.
 >
-> 57 tests, including one that greps the pipeline to prove the agent can't read
+> 70 tests, including one that greps the pipeline to prove the agent can't read
 > the simulation's ground truth. Thank you."
 
 ---

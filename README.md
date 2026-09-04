@@ -80,7 +80,7 @@ Press **Run batch**. ~16 seconds for 250 cases. No API keys needed.
 Or skip the UI entirely: `cd backend && python seed.py --reset`
 
 ```bash
-cd backend && python -m pytest tests -q     # 57 tests, ~43s
+cd backend && python -m pytest tests -q     # 70 tests, ~40s
 cd frontend && npm run build                # production bundle -> dist/
 ```
 
@@ -136,7 +136,7 @@ Three gates, in this order: **stopping rules** → **playbook** → **compliance
 
 Compliance runs *last* on purpose. It can then **defer** an already-chosen action
 to a legal time rather than veto the case — a quiet-hours message goes out at
-09:00 instead of being cancelled. In this batch that's 158 deferrals that kept
+09:00 instead of being cancelled. In this batch that's 159 deferrals that kept
 both the rule and the revenue.
 
 No LLM is consulted anywhere in this file. Which customer gets charged or chased
@@ -230,7 +230,7 @@ is zero, and encoding that is the feature.
 
 The baseline arm runs the *same* evaluation but enforces only the legal floor
 (do-not-contact, consent). Everything else it would have violated is **recorded**
-— 617 violations in this batch, against the agent's 0. That comparison is the
+— 610 violations in this batch, against the agent's 0. That comparison is the
 compliance cost of the naive approach, in units of individual violations.
 
 ---
@@ -410,7 +410,7 @@ backend/app/
   sim/
     generator.py         synthetic cases; never emits the true root cause
     outcome.py           the outcome model — read this before trusting a number
-backend/tests/           57 tests: invariants, audit tampering, oracle leaks
+backend/tests/           70 tests: invariants, audit tampering, oracle leaks
 
 frontend/                React 18 + Vite, Razorpay light theme
   src/App.jsx            composition + data loading + #case= deep links

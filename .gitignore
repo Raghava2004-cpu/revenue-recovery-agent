@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# Local secrets — .env.example is committed, .env is not
+.env
+
+# Generated database (rebuilt by /batch/run or seed.py)
+*.db
+*.db-wal
+*.db-shm
+*.db-journal
+
+# Node / Vite
+node_modules/
+dist/
+*.local
+
+# Local Claude Code / editor state
+.claude/settings.local.json
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

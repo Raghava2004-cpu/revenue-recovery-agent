@@ -1,0 +1,20 @@
+# Pinned to floors rather than exact versions: the original exact pins
+# (pydantic==2.9.2) had no wheel for Python 3.14 and tried to build pydantic-core
+# from Rust source, which fails on a machine without a toolchain. Ranges keep the
+# project installable on 3.11 through 3.14.
+fastapi>=0.115
+uvicorn[standard]>=0.30
+sqlalchemy>=2.0.35
+pydantic>=2.9
+python-dotenv>=1.0
+razorpay>=1.4
+faker>=29.0
+httpx>=0.27
+
+# Optional. Without it the agent still runs end to end: diagnosis falls back to
+# the rule engine plus human escalation, and message copy falls back to the
+# deterministic Hinglish templates in app/ai/message_llm.py.
+anthropic>=0.40
+
+# Tests
+pytest>=8.0

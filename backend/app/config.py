@@ -24,7 +24,16 @@ RAZORPAY_WEBHOOK_SECRET = os.getenv("RAZORPAY_WEBHOOK_SECRET", "")
 # The agent is fully functional with no key set: diagnosis falls back to the
 # rule engine's UNKNOWN -> human escalation path, and message copy falls back
 # to deterministic Hinglish templates. See app/ai/.
-ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
+# `LLM_API_KEY` is the name the first version of this project used, and a .env
+# written against it stays valid. Accepting both matters more than it looks: the
+# failure mode of getting this wrong is *silent* — the agent degrades politely to
+# the rule engine and shows "LLM off" on the dashboard, so a key that is present
+# but under the wrong name looks identical to no key at all.
+ANTHROPIC_API_KEY = (
+    os.getenv("ANTHROPIC_API_KEY")
+    or os.getenv("LLM_API_KEY")
+    or ""
+).strip()
 LLM_MODEL = os.getenv("LLM_MODEL", "claude-opus-5")
 LLM_ENABLED = bool(ANTHROPIC_API_KEY)
 

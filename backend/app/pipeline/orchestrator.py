@@ -39,9 +39,9 @@ ARMS = ("agent", "baseline")
 # Dates in the month when salaried customers in India are most likely to have
 # just been credited. Used as a scheduling heuristic only — the agent has no
 # access to any customer's actual balance.
-SALARY_DAYS = (1, 2, 7, 15)
-SALARY_HOUR_IST = 11
-SALARY_SEARCH_CAP = timedelta(days=6)
+SALARY_DAYS = (1, 2, 7, 15, 28, 29, 30, 31)
+SALARY_HOUR_IST = 21     # evening of the credit day: pay has landed by then
+SALARY_SEARCH_CAP = timedelta(days=11)
 
 
 def _salary_cycle_target(now: datetime, base_delay: timedelta) -> tuple[datetime, str]:

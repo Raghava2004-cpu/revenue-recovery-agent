@@ -20,7 +20,10 @@ export default function App() {
   const [timeline, setTimeline] = useState([]);
   const [audit, setAudit] = useState(null);
   const [openCase, setOpenCase] = useState(null);
-  const [size, setSize] = useState(250);
+  // 800, not 250: at 250 cases a handful of large B2B invoices dominate the
+  // rupee total and the confidence interval spans zero, so the headline number
+  // is not defensible. At 800 the interval clears zero.
+  const [size, setSize] = useState(800);
   const [busy, setBusy] = useState(false);
   const [offline, setOffline] = useState(false);
 

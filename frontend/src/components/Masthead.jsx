@@ -49,8 +49,9 @@ export default function Masthead({ metrics, audit, busy, size, onSize, onRun, on
           title="Batch size"
         >
           <option value={60}>60 cases (fast)</option>
-          <option value={250}>250 cases (significant)</option>
+          <option value={250}>250 cases (fast, noisy)</option>
           <option value={500}>500 cases</option>
+          <option value={800}>800 cases (significant)</option>
         </select>
         <button type="button" className="primary" onClick={onRun} disabled={busy}>
           {busy ? <><span className="spinner" />Running {plural(size, "case")}…</> : "Run batch"}

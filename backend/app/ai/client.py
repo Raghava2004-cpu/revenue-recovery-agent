@@ -47,6 +47,7 @@ class Usage:
 
     def reset(self):
         self.__init__()
+        _breaker.reset()
 
     def add(self, input_tokens: int, output_tokens: int):
         self.calls += 1
@@ -60,20 +61,56 @@ class Usage:
 
     def snapshot(self) -> dict:
         return {
-            "enabled": available(),
+            "enabled": available() and not _breaker.is_open(),
             "model": LLM_MODEL if available() else None,
             "calls": self.calls,
             "failures": self.failures,
             "input_tokens": self.input_tokens,
             "output_tokens": self.output_tokens,
             "cost_usd": round(self.cost_usd, 4),
-            "unavailable_reason": None if available() else (
-                _client_error or "ANTHROPIC_API_KEY is not set"
+            "unavailable_reason": (
+                None if (available() and not _breaker.is_open())
+                else (_breaker.reason or _client_error
+                      or "ANTHROPIC_API_KEY is not set")
             ),
+            "circuit_open": _breaker.is_open(),
         }
 
 
 usage = Usage()
+
+
+class _Breaker:
+    """Trips after `limit` consecutive failures; any success resets it."""
+
+    limit = 3
+
+    def __init__(self):
+        self.consecutive_failures = 0
+        self.reason = None
+
+    def reset(self):
+        self.consecutive_failures = 0
+        self.reason = None
+
+    def record_success(self):
+        self.consecutive_failures = 0
+
+    def record_failure(self, reason: str):
+        self.consecutive_failures += 1
+        if self.consecutive_failures == self.limit:
+            self.reason = reason
+            log.warning(
+                "LLM circuit breaker OPEN after %d consecutive failures — the "
+                "rest of this batch uses the deterministic path. Last error: %s",
+                self.limit, reason,
+            )
+
+    def is_open(self) -> bool:
+        return self.consecutive_failures >= self.limit
+
+
+_breaker = _Breaker()
 
 
 def available() -> bool:
@@ -111,6 +148,14 @@ def call_json(
     if not ANTHROPIC_API_KEY:
         return None
 
+    # Circuit breaker. A dead key, an exhausted credit balance or an outage
+    # fails identically for every case in the batch, and each failure costs a
+    # network round trip — 250 cases turned into ~70 doomed requests and made a
+    # 16-second batch take minutes. After a few consecutive failures we stop
+    # asking and let the deterministic path take over for the rest of the run.
+    if _breaker.is_open():
+        return None
+
     client = _get_client()
     if client is None:
         return None
@@ -143,10 +188,12 @@ def call_json(
 
         if response.stop_reason == "refusal":
             usage.failures += 1
+            _breaker.record_failure("model declined the request")
             log.warning("LLM declined the request; using the deterministic path.")
             return None
 
         usage.add(response.usage.input_tokens, response.usage.output_tokens)
+        _breaker.record_success()
 
         text = next((b.text for b in response.content if b.type == "text"), None)
         if not text:
@@ -156,5 +203,6 @@ def call_json(
 
     except Exception as exc:                               # noqa: BLE001
         usage.failures += 1
+        _breaker.record_failure(str(exc)[:200])
         log.warning("LLM call failed (%s); using the deterministic path.", exc)
         return None

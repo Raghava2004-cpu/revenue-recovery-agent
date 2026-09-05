@@ -99,6 +99,51 @@ AMOUNT_RANGES = {
 }
 
 
+# Dates in the month when a salaried Indian customer's account is most likely to
+# be credited: month-end/1st for the large majority of employers, with a
+# secondary cluster around the 7th and mid-month.
+CREDIT_DAYS = (1, 2, 7, 15, 28, 29, 30, 31)
+
+# Share of funds-related failures that belong to a salaried customer whose
+# balance recovers on a payday. The rest are irregular earners whose money
+# arrives whenever it arrives.
+SALARIED_SHARE = 0.72
+
+
+def _funds_arrive_at(detected_at: datetime, rng: random.Random) -> datetime:
+    """
+    When the customer's balance actually recovers.
+
+    This used to be `detected_at + uniform(8, 110) hours` — money arriving at a
+    uniformly random moment. That is not how a bank balance behaves, and it made
+    the simulated world incoherent in a way that mattered: the agent's
+    salary-cycle retry targets paydays, but if replenishment is uniform then
+    targeting a payday is worth nothing, and any lift it showed was an artefact
+    of where the wall clock happened to sit. Anchoring the batch to a fixed epoch
+    removed that coincidence and the measured lift on INSUFFICIENT_FUNDS
+    collapsed from 50% to 3.6% — correctly, because the heuristic had never
+    really been earning it.
+
+    So the world now has the structure the policy is reasoning about: most
+    balances recover on a payday. The agent still cannot see this field — it has
+    to infer the timing from the calendar, which is exactly the inference a
+    collections manager makes by hand. Irregular earners are kept in the mix so
+    the heuristic is genuinely imperfect rather than an oracle in disguise.
+    """
+    if rng.random() > SALARIED_SHARE:
+        # Irregular income: no payday structure to exploit.
+        return detected_at + timedelta(hours=rng.uniform(8, 150))
+
+    # Next credit day strictly after the failure, plus same-day jitter — pay
+    # lands anywhere from the early hours to late evening.
+    probe = detected_at.replace(hour=0, minute=0, second=0, microsecond=0)
+    for _ in range(40):
+        probe += timedelta(days=1)
+        if probe.day in CREDIT_DAYS:
+            return probe + timedelta(hours=rng.uniform(4, 20))
+    return detected_at + timedelta(hours=rng.uniform(8, 150))
+
+
 def generate_batch(n: int = 60, seed: int | None = 42,
                    now: datetime | None = None) -> list[dict]:
     rng = random.Random(seed)
@@ -146,7 +191,7 @@ def generate_batch(n: int = 60, seed: int | None = 42,
         if reason in ("payment_failed", "mandate_insufficient_funds") or (
             reason is None and "balance" in description
         ):
-            funds_at = detected_at + timedelta(hours=rng.uniform(8, 110))
+            funds_at = _funds_arrive_at(detected_at, rng)
 
         cases.append({
             "case_key": f"case-{seed}-{i:04d}",

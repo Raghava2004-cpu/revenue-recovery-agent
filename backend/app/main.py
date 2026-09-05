@@ -190,9 +190,15 @@ def batch_run(
 
 @app.post("/batch/reset", tags=["demo"])
 def batch_reset(db: Session = Depends(get_db)):
+    # synchronize_session=False + expunge_all: a bulk DELETE does not update the
+    # session's identity map, so any object still cached there points at a row
+    # that no longer exists. The next batch then issues an UPDATE against a
+    # deleted primary key and SQLAlchemy raises StaleDataError mid-run. Clearing
+    # the map after the delete is what makes reset-then-run safe.
     for model in (Promise, RecoveryAction, AuditLog, RevenueEvent):
-        db.query(model).delete()
+        db.query(model).delete(synchronize_session=False)
     db.commit()
+    db.expunge_all()
     return {"status": "reset"}
 
 
